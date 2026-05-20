@@ -8,7 +8,7 @@ const Work = {
       area: parseFloat(data.area),
       charges: parseFloat(data.charges),
       finalAmount: finalAmount,
-      isPaid: false,
+      isPaid: data.isPaid === true,
       date: new Date().toISOString()
     });
     return { id: docRef.id, finalAmount };
