@@ -1,14 +1,20 @@
-const express = require('express');
-const router = express.Router({ mergeParams: true }); // Important: mergeParams allows access to :id from the parent route
-const workController = require('../controllers/workController');
+const express = require("express");
+const router = express.Router({ mergeParams: true });
+const workController = require("../controllers/workController");
 
 // POST: Add new work for a specific customer
-// Endpoint: /api/customers/:id/works
-router.post('/', workController.addWork);
+router.post("/", workController.addWork);
 
 // GET: Fetch all work history for a specific customer
-// Endpoint: /api/customers/:id/works
-router.get('/', workController.getWorkByCustomer);
-router.patch('/:workId', workController.updatePaidStatus);
+router.get("/", workController.getWorkByCustomer);
+
+// PATCH: Toggle paid status
+router.patch("/:workId", workController.updatePaidStatus);
+
+// PUT: Update a work entry
+router.put("/:workId", workController.updateWork);
+
+// DELETE: Delete a work entry
+router.delete("/:workId", workController.deleteWork);
 
 module.exports = router;
