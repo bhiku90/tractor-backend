@@ -29,6 +29,15 @@ const Customer = {
   delete: async (id) => {
     await db.collection("customers").doc(id).delete();
   },
+
+  findByMobile: async (mobile, excludeId = null) => {
+    const snapshot = await db
+      .collection("customers")
+      .where("mobile", "==", mobile)
+      .get();
+    const docs = snapshot.docs.filter((d) => d.id !== excludeId);
+    return docs.length > 0 ? { id: docs[0].id, ...docs[0].data() } : null;
+  },
 };
 
 module.exports = Customer;

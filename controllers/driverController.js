@@ -2,6 +2,18 @@ const Driver = require("../models/driverModel");
 
 exports.addDriver = async (req, res) => {
   try {
+    const { name, mobile } = req.body;
+    if (!name)
+      return res.status(400).json({ error: "Driver name is required." });
+
+    if (mobile) {
+      const dup = await Driver.findByMobile(mobile);
+      if (dup)
+        return res.status(409).json({
+          error: `Mobile ${mobile} is already registered for driver "${dup.name}".`,
+        });
+    }
+
     const driver = await Driver.create(req.body);
     res.status(201).json(driver);
   } catch (err) {
@@ -20,7 +32,20 @@ exports.getDrivers = async (req, res) => {
 
 exports.updateDriver = async (req, res) => {
   try {
-    const updated = await Driver.update(req.params.id, req.body);
+    const { id } = req.params;
+    const { name, mobile } = req.body;
+    if (!name)
+      return res.status(400).json({ error: "Driver name is required." });
+
+    if (mobile) {
+      const dup = await Driver.findByMobile(mobile, id);
+      if (dup)
+        return res.status(409).json({
+          error: `Mobile ${mobile} is already registered for driver "${dup.name}".`,
+        });
+    }
+
+    const updated = await Driver.update(id, req.body);
     res.status(200).json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });

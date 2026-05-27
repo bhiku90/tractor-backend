@@ -8,6 +8,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/customers", require("./routes/customerRoutes"));
 app.use("/api/drivers", require("./routes/driverRoutes"));
+app.use("/api/settings", require("./routes/settingsRoutes"));
 
 app.use("/api/services", serviceRoutes);
 app.use("/api/customers/:id/works", workRoutes);

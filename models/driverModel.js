@@ -19,10 +19,13 @@ const Driver = {
   },
 
   update: async (id, data) => {
-    await db.collection("drivers").doc(id).update({
-      name: data.name,
-      mobile: data.mobile || "",
-    });
+    await db
+      .collection("drivers")
+      .doc(id)
+      .update({
+        name: data.name,
+        mobile: data.mobile || "",
+      });
     return { id, name: data.name, mobile: data.mobile || "" };
   },
 
@@ -42,7 +45,12 @@ const Driver = {
         note: data.note || "",
         createdAt: new Date().toISOString(),
       });
-    return { id: docRef.id, date: data.date, amount: parseFloat(data.amount) || 0, note: data.note || "" };
+    return {
+      id: docRef.id,
+      date: data.date,
+      amount: parseFloat(data.amount) || 0,
+      note: data.note || "",
+    };
   },
 
   getPayments: async (driverId) => {
@@ -62,6 +70,15 @@ const Driver = {
       .collection("payments")
       .doc(paymentId)
       .delete();
+  },
+
+  findByMobile: async (mobile, excludeId = null) => {
+    const snapshot = await db
+      .collection("drivers")
+      .where("mobile", "==", mobile)
+      .get();
+    const docs = snapshot.docs.filter((d) => d.id !== excludeId);
+    return docs.length > 0 ? { id: docs[0].id, ...docs[0].data() } : null;
   },
 };
 
