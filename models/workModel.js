@@ -1,7 +1,15 @@
 const db = require("../config/firebase");
 
+/** Returns the works sub-collection ref scoped to a firm + customer. */
+const col = (firmId, customerId) =>
+  db
+    .collection("firms")
+    .doc(firmId)
+    .collection("customers")
+    .doc(customerId)
+    .collection("works");
+
 const Work = {
-  // Internal helper — calculates fields based on category
   _calc: (category, data) => {
     const advancedPaid = parseFloat(data.advancedPaid) || 0;
     let finalAmount = 0;
@@ -18,7 +26,6 @@ const Work = {
       finalAmount = parseFloat((sacks * ratePerSack).toFixed(2));
       extra = { sacks, ratePerSack };
     } else {
-      // farming (default — backward compatible)
       const acres = parseFloat(data.acres) || 0;
       const gunthas = parseFloat(data.gunthas) || 0;
       const totalArea = acres + gunthas / 40;
@@ -37,30 +44,17 @@ const Work = {
     };
   },
 
-  create: async (customerId, data) => {
+  create: async (firmId, customerId, data) => {
     const category = data.category || "farming";
     const calcFields = Work._calc(category, data);
-
     const docData = {
       category,
-      workName:
-        data.workName ||
-        (category === "trailer"
-          ? "Trailer"
-          : category === "thresher"
-            ? "Thresher"
-            : "Farming"),
+      workName: data.workName || category,
       description: data.description || "",
       date: data.date || new Date().toISOString(),
       ...calcFields,
     };
-
-    const docRef = await db
-      .collection("customers")
-      .doc(customerId)
-      .collection("works")
-      .add(docData);
-
+    const docRef = await col(firmId, customerId).add(docData);
     return {
       id: docRef.id,
       finalAmount: calcFields.finalAmount,
@@ -68,63 +62,36 @@ const Work = {
     };
   },
 
-  getByCustomer: async (customerId) => {
-    const snapshot = await db
-      .collection("customers")
-      .doc(customerId)
-      .collection("works")
+  getByCustomer: async (firmId, customerId) => {
+    const snapshot = await col(firmId, customerId)
       .orderBy("date", "desc")
       .get();
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   },
 
-  update: async (customerId, workId, data) => {
+  update: async (firmId, customerId, workId, data) => {
     const category = data.category || "farming";
     const calcFields = Work._calc(category, data);
-
     const updateData = {
       category,
-      workName:
-        data.workName ||
-        (category === "trailer"
-          ? "Trailer"
-          : category === "thresher"
-            ? "Thresher"
-            : "Farming"),
+      workName: data.workName || category,
       description: data.description || "",
       date: data.date || new Date().toISOString(),
       ...calcFields,
     };
-
-    await db
-      .collection("customers")
-      .doc(customerId)
-      .collection("works")
-      .doc(workId)
-      .update(updateData);
-
+    await col(firmId, customerId).doc(workId).update(updateData);
     return {
       finalAmount: calcFields.finalAmount,
       balanceDue: calcFields.balanceDue,
     };
   },
 
-  delete: async (customerId, workId) => {
-    await db
-      .collection("customers")
-      .doc(customerId)
-      .collection("works")
-      .doc(workId)
-      .delete();
+  delete: async (firmId, customerId, workId) => {
+    await col(firmId, customerId).doc(workId).delete();
   },
 
-  togglePaidStatus: async (customerId, workId, status) => {
-    await db
-      .collection("customers")
-      .doc(customerId)
-      .collection("works")
-      .doc(workId)
-      .update({ isPaid: status });
+  togglePaidStatus: async (firmId, customerId, workId, status) => {
+    await col(firmId, customerId).doc(workId).update({ isPaid: status });
   },
 };
 

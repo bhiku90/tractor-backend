@@ -1,8 +1,13 @@
 const db = require("../config/firebase");
 
+const col = (firmId) =>
+  db.collection("firms").doc(firmId).collection("drivers");
+const payCol = (firmId, driverId) =>
+  col(firmId).doc(driverId).collection("payments");
+
 const Driver = {
-  create: async (data) => {
-    const docRef = await db.collection("drivers").add({
+  create: async (firmId, data) => {
+    const docRef = await col(firmId).add({
       name: data.name,
       mobile: data.mobile || "",
       createdAt: new Date().toISOString(),
@@ -10,41 +15,35 @@ const Driver = {
     return { id: docRef.id, name: data.name, mobile: data.mobile || "" };
   },
 
-  getAll: async () => {
-    const snapshot = await db
-      .collection("drivers")
-      .orderBy("name", "asc")
-      .get();
+  getAll: async (firmId) => {
+    const snapshot = await col(firmId).orderBy("name", "asc").get();
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   },
 
-  update: async (id, data) => {
-    await db
-      .collection("drivers")
+  update: async (firmId, id, data) => {
+    await col(firmId)
       .doc(id)
-      .update({
-        name: data.name,
-        mobile: data.mobile || "",
-      });
+      .update({ name: data.name, mobile: data.mobile || "" });
     return { id, name: data.name, mobile: data.mobile || "" };
   },
 
-  delete: async (id) => {
-    await db.collection("drivers").doc(id).delete();
+  delete: async (firmId, id) => {
+    await col(firmId).doc(id).delete();
   },
 
-  // ── Payments ──────────────────────────────────────────────────────────
-  addPayment: async (driverId, data) => {
-    const docRef = await db
-      .collection("drivers")
-      .doc(driverId)
-      .collection("payments")
-      .add({
-        date: data.date || new Date().toISOString(),
-        amount: parseFloat(data.amount) || 0,
-        note: data.note || "",
-        createdAt: new Date().toISOString(),
-      });
+  findByMobile: async (firmId, mobile, excludeId = null) => {
+    const snapshot = await col(firmId).where("mobile", "==", mobile).get();
+    const docs = snapshot.docs.filter((d) => d.id !== excludeId);
+    return docs.length > 0 ? { id: docs[0].id, ...docs[0].data() } : null;
+  },
+
+  addPayment: async (firmId, driverId, data) => {
+    const docRef = await payCol(firmId, driverId).add({
+      date: data.date || new Date().toISOString(),
+      amount: parseFloat(data.amount) || 0,
+      note: data.note || "",
+      createdAt: new Date().toISOString(),
+    });
     return {
       id: docRef.id,
       date: data.date,
@@ -53,32 +52,15 @@ const Driver = {
     };
   },
 
-  getPayments: async (driverId) => {
-    const snapshot = await db
-      .collection("drivers")
-      .doc(driverId)
-      .collection("payments")
+  getPayments: async (firmId, driverId) => {
+    const snapshot = await payCol(firmId, driverId)
       .orderBy("date", "desc")
       .get();
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   },
 
-  deletePayment: async (driverId, paymentId) => {
-    await db
-      .collection("drivers")
-      .doc(driverId)
-      .collection("payments")
-      .doc(paymentId)
-      .delete();
-  },
-
-  findByMobile: async (mobile, excludeId = null) => {
-    const snapshot = await db
-      .collection("drivers")
-      .where("mobile", "==", mobile)
-      .get();
-    const docs = snapshot.docs.filter((d) => d.id !== excludeId);
-    return docs.length > 0 ? { id: docs[0].id, ...docs[0].data() } : null;
+  deletePayment: async (firmId, driverId, paymentId) => {
+    await payCol(firmId, driverId).doc(paymentId).delete();
   },
 };
 

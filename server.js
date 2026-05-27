@@ -1,17 +1,12 @@
 const express = require("express");
 const cors = require("cors");
-const serviceRoutes = require("./routes/serviceRoutes");
-const workRoutes = require("./routes/workRoutes");
-
 const app = express();
+
 app.use(cors());
 app.use(express.json());
-app.use("/api/customers", require("./routes/customerRoutes"));
-app.use("/api/drivers", require("./routes/driverRoutes"));
-app.use("/api/settings", require("./routes/settingsRoutes"));
 
-app.use("/api/services", serviceRoutes);
-app.use("/api/customers/:id/works", workRoutes);
+// All application data is scoped under /api/firms/:firmId
+app.use("/api/firms", require("./routes/firmRoutes"));
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
